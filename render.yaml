@@ -1,6 +1,0 @@
-services:
-  - type: web
-    name: sprout-tech
-    runtime: static
-    buildCommand: npm ci && npm run build
-    staticPublishPath: ./dist
