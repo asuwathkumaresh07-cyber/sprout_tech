@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Render the original Sprout Tech campus film</title><style>[hidden]{display:none!important}body{margin:0;background:#102b20;color:#e8edcf;font:14px sans-serif;padding:24px}canvas{width:min(100%,1100px);display:block;margin:20px 0}button,a{background:#e5eccd;border:0;padding:15px 25px;color:#173626;font:inherit;cursor:pointer}#source{display:none}p{color:#bad0a5}a{display:inline-block;margin-left:15px}</style></head><body><h1>Original Sprout Tech campus film</h1><p>Renders the original 3D environment and first-person camera path into a 45-second film.</p><button id="record">Render original film</button><a id="download" hidden>Download rendered film</a><p id="status" role="status">Ready to render.</p><canvas id="source" width="1280" height="720"></canvas><canvas id="film" width="1280" height="720"></canvas><script type="module">
+import {createCampus} from './campus.js';
+const source=document.querySelector('#source'),output=document.querySelector('#film');
+const campus=createCampus(source,{film:true});campus.resize(1280,720);
+const ctx=output.getContext('2d');const status=document.querySelector('#status');
+const labels=['THE ARRIVAL','THE RESEARCH LAB','THE BUILD STUDIO','THE PROJECT GALLERY','THE MEETING GARDEN'];
+function draw(p,seconds){campus.renderAt(p,seconds,{x:0,y:0});ctx.drawImage(source,0,0);ctx.fillStyle='#091c15';ctx.fillRect(0,0,1280,42);ctx.fillRect(0,678,1280,42);const grad=ctx.createLinearGradient(0,450,0,680);grad.addColorStop(0,'#102b2000');grad.addColorStop(1,'#102b2099');ctx.fillStyle=grad;ctx.fillRect(0,450,1280,230);ctx.fillStyle='#e8edcf';ctx.font='500 18px sans-serif';ctx.fillText('sprout tech',46,29);ctx.font='10px sans-serif';ctx.fillText('AN ORIGINAL FIRST-PERSON CAMPUS TOUR',920,28);const i=Math.min(4,Math.floor(p*5));ctx.font='12px sans-serif';ctx.fillText('0'+i+' / '+labels[i],50,617);ctx.font='30px Georgia';ctx.fillText(['A place for possibility.','Every breakthrough starts with a question.','Imagination, made real.','Built with purpose.','Let’s build what’s next.'][i],50,657);ctx.fillStyle='#dce7b9';ctx.fillRect(0,716,1280*p,4);}
+draw(0,0);
+document.querySelector('#record').addEventListener('click',()=>{
+ const button=document.querySelector('#record');button.disabled=true;
+ const mime=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(type=>MediaRecorder.isTypeSupported(type));
+ if(!mime){status.textContent='This browser does not support WebM recording.';button.disabled=false;return;}
+ const stream=output.captureStream(24),chunks=[];const recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:6500000});
+ recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
+ recorder.onstop=()=>{stream.getTracks().forEach(track=>track.stop());const blob=new Blob(chunks,{type:'video/webm'});const url=URL.createObjectURL(blob);const link=document.querySelector('#download');link.href=url;link.download='sprout-campus-original.webm';link.hidden=false;status.textContent='Original film is ready. '+(blob.size/1048576).toFixed(1)+' MB';button.disabled=false;};
+ recorder.start(1000);const start=performance.now();
+ function frame(now){const seconds=(now-start)/1000,p=Math.min(1,seconds/45);draw(p,seconds);status.textContent='Rendering original campus film: '+Math.round(p*100)+'%';if(p<1)requestAnimationFrame(frame);else recorder.stop();}
+ requestAnimationFrame(frame);
+});
+</script></body></html>
